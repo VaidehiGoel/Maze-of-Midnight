@@ -1,69 +1,119 @@
-const mazeElement = document.getElementById("maze");
-const size = 10;
+const maze = document.getElementById("maze");
 
-const mazeLayout = [
-  "WWWPWWWWWW",
-  "WPWPWPPPPW",
-  "WPWWWWWPWW",
-  "WPPPPWPPGW",
-  "WWWPWWWPWW",
-  "WPPPWPPPPW",
-  "WWWWWPPPWW",
-  "WSWPPWWWGW",
-  "WPPPWPPPPW",
-  "WWWWWWWWWW"
+// Maze Legend:
+// 0 = Wall
+// 1 = Path
+// 2 = Start
+// 3 = Goal
+// 4 = Time-based tile (unlocked during allowed hours)
+
+// Hours (24h format) when time tiles are unlocked
+const timeTileActiveHours = [8, 9, 10, 11, 18, 19, 20]; // You can adjust this
+
+// Create the maze layout (10x10)
+const layout = [
+  [0, 2, 0, 1, 0, 0, 0, 0, 0, 0],
+  [0, 1, 0, 4, 1, 1, 0, 0, 0, 0],
+  [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
+  [0, 0, 0, 4, 0, 0, 0, 0, 1, 3],
+  [0, 0, 0, 1, 1, 1, 0, 0, 1, 0],
+  [0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
+  [0, 4, 1, 1, 1, 1, 1, 1, 1, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 3],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 ];
 
-let playerPos = { x: 1, y: 1 };
+let playerPos = { x: 1, y: 0 }; // Start coordinates
+
+function isTimeTileActive() {
+  const currentHour = new Date().getHours();
+  return timeTileActiveHours.includes(currentHour);
+}
 
 function renderMaze() {
-  mazeElement.innerHTML = "";
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
+  maze.innerHTML = "";
+
+  for (let y = 0; y < layout.length; y++) {
+    for (let x = 0; x < layout[0].length; x++) {
       const cell = document.createElement("div");
       cell.classList.add("cell");
 
-      const char = mazeLayout[y][x];
       if (x === playerPos.x && y === playerPos.y) {
         cell.classList.add("player");
-        cell.textContent = "🧍";
-      } else if (char === "W") {
-        cell.classList.add("wall");
-      } else if (char === "P") {
-        cell.classList.add("path");
-      } else if (char === "G") {
-        cell.classList.add("goal");
-        cell.textContent = "🏁";
-      } else if (char === "S") {
-        const hour = new Date().getHours();
-        if (hour >= 18 || hour <= 6) {
-          cell.classList.add("secret-path");
-        } else {
-          cell.classList.add("wall");
+      } else {
+        switch (layout[y][x]) {
+          case 0:
+            cell.classList.add("wall");
+            break;
+          case 1:
+            cell.classList.add("path");
+            break;
+          case 2:
+            cell.classList.add("path");
+            break;
+          case 3:
+            cell.classList.add("goal");
+            break;
+          case 4:
+            if (isTimeTileActive()) {
+              cell.classList.add("path");
+            } else {
+              cell.classList.add("time-tile");
+            }
+            break;
         }
       }
-      mazeElement.appendChild(cell);
+
+      maze.appendChild(cell);
+    }
+  }
+}
+
+function movePlayer(dx, dy) {
+  const newX = playerPos.x + dx;
+  const newY = playerPos.y + dy;
+
+  if (
+    newX >= 0 &&
+    newX < layout[0].length &&
+    newY >= 0 &&
+    newY < layout.length
+  ) {
+    const target = layout[newY][newX];
+    const canEnter =
+      target === 1 ||
+      target === 2 ||
+      target === 3 ||
+      (target === 4 && isTimeTileActive());
+
+    if (canEnter) {
+      playerPos = { x: newX, y: newY };
+      renderMaze();
+
+      if (target === 3) {
+        setTimeout(() => {
+          alert("🎉 You reached the goal!");
+        }, 100);
+      }
     }
   }
 }
 
 document.addEventListener("keydown", (e) => {
-  const dx = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: 0, ArrowDown: 0 }[e.key];
-  const dy = { ArrowLeft: 0, ArrowRight: 0, ArrowUp: -1, ArrowDown: 1 }[e.key];
-  if (dx !== undefined && dy !== undefined) {
-    const newX = playerPos.x + dx;
-    const newY = playerPos.y + dy;
-    const char = mazeLayout[newY]?.[newX];
-
-    // Secret path is only available at night
-    const hour = new Date().getHours();
-    const isNight = hour >= 18 || hour <= 6;
-
-    if (char && (char !== "W" && (char !== "S" || isNight))) {
-      playerPos.x = newX;
-      playerPos.y = newY;
-      renderMaze();
-    }
+  switch (e.key) {
+    case "ArrowUp":
+      movePlayer(0, -1);
+      break;
+    case "ArrowDown":
+      movePlayer(0, 1);
+      break;
+    case "ArrowLeft":
+      movePlayer(-1, 0);
+      break;
+    case "ArrowRight":
+      movePlayer(1, 0);
+      break;
   }
 });
 
