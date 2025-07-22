@@ -3,35 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Time Δ</title>
+  <title>Time Capsule</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1> Time Δ</h1>
+  <nav class="navbar">
+    <h1>⏳ Time Capsule</h1>
+    <ul>
+      <li><button onclick="scrollToSection('homeSection')">🏠 Home</button></li>
+      <li><button onclick="scrollToSection('unopenedSection')">🔓 Unopened</button></li>
+      <li><button onclick="showSection('opened')">📖 Opened</button></li>
+      <li><button onclick="showSection('future')">🕒 Future</button></li>
+    </ul>
+  </nav>
 
-    <div id="capsuleForm">
-      <textarea id="message" placeholder="Write your message here..."></textarea>
-      <input type="datetime-local" id="unlockTime" />
-      <button onclick="lockCapsule()">Lock Capsule</button>
-    </div>
+  <main>
+    <section class="formSection" id="homeSection">
+      <h2>Create New Capsule</h2>
+      <form id="capsuleForm">
+        <input type="text" id="title" placeholder="Capsule Title" required />
+        <textarea id="message" placeholder="Your message..." required></textarea>
+        <input type="datetime-local" id="unlockTime" required />
+        <button type="submit">Create Capsule</button>
+      </form>
+    </section>
 
+    <section id="unopenedSection" class="capsuleContainer">
+      <h2>🔓 Unopened Capsules</h2>
+      <div id="capsuleList-unopened"></div>
+    </section>
 
-      <div id="lockedCapsule" class="hidden">
-        <p>🔒 Your capsule is locked!</p>
-        <p>Unlocks at: <span id="unlockDisplay"></span></p>
-        <p>⏳ Time left: <span id="countdown"></span></p>
-        <button id="openButton" class="hidden" onclick="openCapsule()">Open Capsule</button>
-      </div>
-
-      
-
-    <div id="unlockedCapsule" class="hidden">
-      <p>🎉 Your Time Capsule is now open!</p>
-      <div id="revealedMessage"></div>
-      <button onclick="resetCapsule()">Create New Capsule</button>
-    </div>
-  </div>
+    <section class="capsuleContainer" id="capsuleList-other" style="display: none;">
+      <h2 id="otherSectionTitle"></h2>
+      <div id="capsuleList-content"></div>
+    </section>
+  </main>
 
   <script src="script.js"></script>
 </body>
