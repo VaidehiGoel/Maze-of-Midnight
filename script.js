@@ -1,120 +1,93 @@
-const maze = document.getElementById("maze");
+function lockCapsule() {
+  const message = document.getElementById("message").value.trim();
+  const unlockTime = document.getElementById("unlockTime").value;
 
-// Maze Legend:
-// 0 = Wall
-// 1 = Path
-// 2 = Start
-// 3 = Goal
-// 4 = Time-based tile (unlocked during allowed hours)
+  if (!message || !unlockTime) {
+    alert("Please enter a message and choose unlock time!");
+    return;
+  }
 
-// Hours (24h format) when time tiles are unlocked
-const timeTileActiveHours = [8, 9, 10, 11, 18, 19, 20]; // You can adjust this
+  const unlockDate = new Date(unlockTime);
+  const now = new Date();
 
-// Create the maze layout (10x10)
-const layout = [
-  [0, 2, 0, 1, 0, 0, 0, 0, 0, 0],
-  [0, 1, 0, 4, 1, 1, 0, 0, 0, 0],
-  [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
-  [0, 0, 0, 4, 0, 0, 0, 0, 1, 3],
-  [0, 0, 0, 1, 1, 1, 0, 0, 1, 0],
-  [0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
-  [0, 4, 1, 1, 1, 1, 1, 1, 1, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 3],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-];
+  if (unlockDate <= now) {
+    alert("Unlock time must be in the future.");
+    return;
+  }
 
-let playerPos = { x: 1, y: 0 }; // Start coordinates
+  localStorage.setItem("capsuleMessage", message);
+  localStorage.setItem("capsuleUnlockTime", unlockDate.toISOString());
 
-function isTimeTileActive() {
-  const currentHour = new Date().getHours();
-  return timeTileActiveHours.includes(currentHour);
+  updateUI();
 }
 
-function renderMaze() {
-  maze.innerHTML = "";
+function updateUI() {
+  const message = localStorage.getItem("capsuleMessage");
+  const unlockTime = localStorage.getItem("capsuleUnlockTime");
 
-  for (let y = 0; y < layout.length; y++) {
-    for (let x = 0; x < layout[0].length; x++) {
-      const cell = document.createElement("div");
-      cell.classList.add("cell");
+  if (!message || !unlockTime) return;
 
-      if (x === playerPos.x && y === playerPos.y) {
-        cell.classList.add("player");
-      } else {
-        switch (layout[y][x]) {
-          case 0:
-            cell.classList.add("wall");
-            break;
-          case 1:
-            cell.classList.add("path");
-            break;
-          case 2:
-            cell.classList.add("path");
-            break;
-          case 3:
-            cell.classList.add("goal");
-            break;
-          case 4:
-            if (isTimeTileActive()) {
-              cell.classList.add("path");
-            } else {
-              cell.classList.add("time-tile");
-            }
-            break;
-        }
-      }
+  const unlockDate = new Date(unlockTime);
+  const now = new Date();
 
-      maze.appendChild(cell);
+  document.getElementById("capsuleForm").classList.add("hidden");
+
+  if (now >= unlockDate) {
+    document.getElementById("lockedCapsule").classList.remove("hidden");
+    document.getElementById("unlockedCapsule").classList.add("hidden");
+    document.getElementById("unlockDisplay").textContent = unlockDate.toLocaleString();
+    document.getElementById("countdown").textContent = "Ready to open!";
+    document.getElementById("openButton").classList.remove("hidden");
+  } else {
+    document.getElementById("lockedCapsule").classList.remove("hidden");
+    document.getElementById("unlockedCapsule").classList.add("hidden");
+    document.getElementById("unlockDisplay").textContent = unlockDate.toLocaleString();
+    updateCountdown(unlockDate);
+  }
+}
+
+function updateCountdown(unlockDate) {
+  const countdownEl = document.getElementById("countdown");
+  const openButton = document.getElementById("openButton");
+
+  const interval = setInterval(() => {
+    const now = new Date();
+    const diff = unlockDate - now;
+
+    if (diff <= 0) {
+      clearInterval(interval);
+      countdownEl.textContent = "Ready to open!";
+      openButton.classList.remove("hidden");
+    } else {
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+      countdownEl.textContent = `${hours}h ${mins}m ${secs}s`;
     }
-  }
+  }, 1000);
 }
 
-function movePlayer(dx, dy) {
-  const newX = playerPos.x + dx;
-  const newY = playerPos.y + dy;
+function openCapsule() {
+  const unlockTime = localStorage.getItem("capsuleUnlockTime");
+  const now = new Date();
+  const unlockDate = new Date(unlockTime);
 
-  if (
-    newX >= 0 &&
-    newX < layout[0].length &&
-    newY >= 0 &&
-    newY < layout.length
-  ) {
-    const target = layout[newY][newX];
-    const canEnter =
-      target === 1 ||
-      target === 2 ||
-      target === 3 ||
-      (target === 4 && isTimeTileActive());
-
-    if (canEnter) {
-      playerPos = { x: newX, y: newY };
-      renderMaze();
-
-      if (target === 3) {
-        setTimeout(() => {
-          alert("🎉 You reached the goal!");
-        }, 100);
-      }
-    }
+  if (now < unlockDate) {
+    alert("It's not time yet!");
+    return;
   }
+
+  const message = localStorage.getItem("capsuleMessage");
+  document.getElementById("lockedCapsule").classList.add("hidden");
+  document.getElementById("unlockedCapsule").classList.remove("hidden");
+  document.getElementById("revealedMessage").textContent = message;
 }
 
-document.addEventListener("keydown", (e) => {
-  switch (e.key) {
-    case "ArrowUp":
-      movePlayer(0, -1);
-      break;
-    case "ArrowDown":
-      movePlayer(0, 1);
-      break;
-    case "ArrowLeft":
-      movePlayer(-1, 0);
-      break;
-    case "ArrowRight":
-      movePlayer(1, 0);
-      break;
-  }
-});
+function resetCapsule() {
+  localStorage.removeItem("capsuleMessage");
+  localStorage.removeItem("capsuleUnlockTime");
+  location.reload();
+}
 
-renderMaze();
+// On load
+updateUI();

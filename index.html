@@ -3,16 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TimeMaze</title>
+  <title>Time Δ</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>🕒 TimeMaze</h1>
-  <p class="subtitle">A maze that changes with time ⏳</p>
+  <div class="container">
+    <h1> Time Δ</h1>
 
-  <div class="maze" id="maze"></div>
+    <div id="capsuleForm">
+      <textarea id="message" placeholder="Write your message here..."></textarea>
+      <input type="datetime-local" id="unlockTime" />
+      <button onclick="lockCapsule()">Lock Capsule</button>
+    </div>
 
-  <p class="tip">Use arrow keys to move the player. Try visiting at different times!</p>
+
+      <div id="lockedCapsule" class="hidden">
+        <p>🔒 Your capsule is locked!</p>
+        <p>Unlocks at: <span id="unlockDisplay"></span></p>
+        <p>⏳ Time left: <span id="countdown"></span></p>
+        <button id="openButton" class="hidden" onclick="openCapsule()">Open Capsule</button>
+      </div>
+
+      
+
+    <div id="unlockedCapsule" class="hidden">
+      <p>🎉 Your Time Capsule is now open!</p>
+      <div id="revealedMessage"></div>
+      <button onclick="resetCapsule()">Create New Capsule</button>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
