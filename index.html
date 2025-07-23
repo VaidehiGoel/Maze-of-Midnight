@@ -5,13 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Time Capsule</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .capsule-img {
+      max-width: 100%;
+      max-height: 300px;
+      object-fit: cover;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+    .capsuleCard {
+      border: 1px solid #ddd;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      background-color: #fefefe;
+    }
+    .openBtn {
+      margin-top: 10px;
+    }
+    .message-hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <nav class="navbar">
     <h1>⏳ Time Capsule</h1>
     <ul>
-      <li><button onclick="scrollToSection('homeSection')">🏠 Home</button></li>
-      <li><button onclick="scrollToSection('unopenedSection')">🔓 Unopened</button></li>
+      <li><button onclick="navigate('homeSection')">🏠 Home</button></li>
+      <li><button onclick="navigate('unopenedSection')">🔓 Unopened</button></li>
       <li><button onclick="showSection('opened')">📖 Opened</button></li>
       <li><button onclick="showSection('future')">🕒 Future</button></li>
     </ul>
@@ -24,6 +46,10 @@
         <input type="text" id="title" placeholder="Capsule Title" required />
         <textarea id="message" placeholder="Your message..." required></textarea>
         <input type="datetime-local" id="unlockTime" required />
+        <label for="photo">Attach Photo:</label>
+        <input type="file" id="photo" accept="image/*" />
+        <label for="voiceNote">Attach Voice Note:</label>
+        <input type="file" id="voiceNote" accept="audio/*" />
         <button type="submit">Create Capsule</button>
       </form>
     </section>

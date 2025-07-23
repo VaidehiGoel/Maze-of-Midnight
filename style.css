@@ -97,3 +97,10 @@ button[type="submit"] {
   margin-top: 5px;
 }
 
+.capsule-img {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  margin-top: 10px;
+  border-radius: 8px;
+}

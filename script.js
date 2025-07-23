@@ -1,8 +1,14 @@
 document.getElementById("capsuleForm").addEventListener("submit", function (e) {
   e.preventDefault();
+
   const title = document.getElementById("title").value.trim();
   const message = document.getElementById("message").value.trim();
   const unlockTime = document.getElementById("unlockTime").value;
+
+  const photoFile = document.getElementById("photo").files[0];
+  const voiceFile = document.getElementById("voiceNote").files[0];
+  const photoURL = photoFile ? URL.createObjectURL(photoFile) : null;
+  const voiceURL = voiceFile ? URL.createObjectURL(voiceFile) : null;
 
   if (!title || !message || !unlockTime) return;
 
@@ -12,7 +18,9 @@ document.getElementById("capsuleForm").addEventListener("submit", function (e) {
     message,
     unlockTime,
     opened: false,
-    revealed: false
+    revealed: false,
+    photo: photoURL,
+    voiceNote: voiceURL
   };
 
   const capsules = getCapsules();
@@ -40,12 +48,13 @@ function renderUnopened() {
   capsules.forEach(c => {
     const div = document.createElement("div");
     div.className = "capsuleCard";
-
     const isRevealed = c.revealed;
 
     div.innerHTML = `
       <h3>${c.title}</h3>
       <p><strong>Unlocked:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
+      ${c.voiceNote && isRevealed ? `<audio controls src="${c.voiceNote}" style="margin-top:10px;"></audio>` : ''}
+      ${c.photo && isRevealed ? `<img src="${c.photo}" alt="Capsule Photo" class="capsule-img" />` : ''}
       <div id="message-${c.id}" class="${isRevealed ? '' : 'message-hidden'}">
         <p>${c.message}</p>
         <button class="openBtn" onclick="markAsRead('${c.id}')">Mark as Read</button>
@@ -84,6 +93,7 @@ function renderOther(type) {
   const container = document.getElementById("capsuleList-other");
   const content = document.getElementById("capsuleList-content");
   const title = document.getElementById("otherSectionTitle");
+
   container.style.display = "block";
   document.getElementById("homeSection").style.display = "none";
   document.getElementById("unopenedSection").style.display = "none";
@@ -103,19 +113,17 @@ function renderOther(type) {
   capsules.forEach(c => {
     const div = document.createElement("div");
     div.className = "capsuleCard";
-
     let html = `
       <h3>${c.title}</h3>
       <p><strong>Unlocks:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
     `;
-
     if (type === "future") {
-      const countdown = getCountdownString(c.unlockTime);
-      html += `<p class="countdown">⏳ ${countdown}</p>`;
+      html += `<p class="countdown">⏳ ${getCountdownString(c.unlockTime)}</p>`;
     } else {
+      if (c.voiceNote) html += `<audio controls src="${c.voiceNote}" style="margin-top:10px;"></audio>`;
+      if (c.photo) html += `<img src="${c.photo}" alt="Capsule Photo" class="capsule-img" />`;
       html += `<p>${c.message}</p>`;
     }
-
     div.innerHTML = html;
     content.appendChild(div);
   });
@@ -129,13 +137,10 @@ function getCountdownString(unlockTime) {
   const now = new Date();
   const then = new Date(unlockTime);
   const diff = then - now;
-
   if (diff <= 0) return "Available Now!";
-
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
   return `${hours}h ${minutes}m ${seconds}s left`;
 }
 
@@ -164,17 +169,20 @@ function showSection(section) {
   renderOther(section);
 }
 
-function scrollToSection(sectionId) {
-  const home = document.getElementById("homeSection");
-  const unopened = document.getElementById("unopenedSection");
-  const other = document.getElementById("capsuleList-other");
+function navigate(sectionId) {
+  const sections = ["homeSection", "unopenedSection", "capsuleList-other"];
+  sections.forEach(id => {
+    document.getElementById(id).style.display = (id === sectionId || id === "unopenedSection") ? "block" : "none";
+  });
 
-  home.style.display = "block";
-  unopened.style.display = "block";
-  other.style.display = "none";
+  // Ensure the scroll happens after DOM update
+  setTimeout(() => {
+    const target = document.getElementById(sectionId);
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  }, 100);
 
-  document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
   renderAll();
 }
 
+// Initial render when page loads
 renderAll();
