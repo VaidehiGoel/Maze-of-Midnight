@@ -113,32 +113,51 @@ window.onload = () => {
   }
 
   function renderUnopened() {
-    const container = document.getElementById("capsuleList-unopened");
-    container.innerHTML = "";
-    const now = new Date();
-    const capsules = getCapsules().filter(c => !c.opened && new Date(c.unlockTime) <= now);
+  const container = document.getElementById("capsuleList-unopened");
+  container.innerHTML = "";
+  const now = new Date();
+  const capsules = getCapsules().filter(c => !c.opened && new Date(c.unlockTime) <= now);
 
-    capsules.forEach(c => {
-      const div = document.createElement("div");
-      div.className = "capsuleCard";
+  capsules.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "capsuleCard";
 
-      div.innerHTML = `
-        <h3>${c.title}</h3>
-        <p><strong>Unlocked:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
-        ${c.revealed && c.voiceNote ? `<audio controls src="${c.voiceNote}"></audio>` : ''}
-        ${c.revealed && c.photo ? `<img src="${c.photo}" class="capsule-img" />` : ''}
-        ${c.revealed && c.video ? `<video controls src="${c.video}"></video>` : ''}
-        <div class="${c.revealed ? '' : 'message-hidden'}">
-          <p>${c.message}</p>
-          <button onclick="markAsRead('${c.id}')">Mark as Read</button>
-        </div>
-        <div class="${c.revealed ? 'message-hidden' : ''}">
-          <button onclick="revealMessage('${c.id}')">Open Capsule</button>
-        </div>
-      `;
-      container.appendChild(div);
-    });
-  }
+    let html = `
+      <h3>${c.title}</h3>
+      <p><strong>Unlocked:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
+    `;
+
+    // ✅ Neatly grouped media block
+    if (c.revealed && (c.voiceNote || c.photo || c.video)) {
+      html += `<div class="media-block">`;
+
+      if (c.voiceNote) {
+        html += `<audio controls src="${c.voiceNote}"></audio>`;
+      }
+      if (c.photo) {
+        html += `<img src="${c.photo}" class="capsule-img" />`;
+      }
+      if (c.video) {
+        html += `<video controls src="${c.video}"></video>`;
+      }
+
+      html += `</div>`;
+    }
+
+    html += `
+      <div class="${c.revealed ? '' : 'message-hidden'}">
+        <p>${c.message}</p>
+        <button onclick="markAsRead('${c.id}')">Mark as Read</button>
+      </div>
+      <div class="${c.revealed ? 'message-hidden' : ''}">
+        <button onclick="revealMessage('${c.id}')">Open Capsule</button>
+      </div>
+    `;
+
+    div.innerHTML = html;
+    container.appendChild(div);
+  });
+}
 
   window.revealMessage = function(id) {
     const capsules = getCapsules();
@@ -162,43 +181,56 @@ window.onload = () => {
   };
 
   function renderOther(type) {
-    const container = document.getElementById("capsuleList-content");
-    container.innerHTML = "";
-    document.getElementById("otherSectionTitle").textContent = type === "opened"
-      ? "📖 Opened Capsules"
-      : "🕒 Future Capsules";
+  const container = document.getElementById("capsuleList-content");
+  container.innerHTML = "";
+  document.getElementById("otherSectionTitle").textContent =
+    type === "opened" ? "📖 Opened Capsules" : "🕒 Future Capsules";
 
-    const now = new Date();
-    let capsules = getCapsules();
+  const now = new Date();
+  let capsules = getCapsules();
 
-        capsules = (type === "opened")
-      ? capsules.filter(c => c.opened)
-      : capsules.filter(c => !c.opened && new Date(c.unlockTime) > now);
+  capsules = (type === "opened")
+    ? capsules.filter(c => c.opened)
+    : capsules.filter(c => !c.opened && new Date(c.unlockTime) > now);
 
-    capsules.forEach(c => {
-      const div = document.createElement("div");
-      div.className = "capsuleCard";
+  capsules.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "capsuleCard";
 
-      let html = `
-        <h3>${c.title}</h3>
-        <p><strong>Unlocks:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
-      `;
+    let html = `
+      <h3>${c.title}</h3>
+      <p><strong>Unlocks:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
+    `;
 
-      if (type === "future") {
-        html += `<p class="countdown">⏳ ${getCountdownString(c.unlockTime)}</p>`;
-      } else {
-        if (c.voiceNote) html += `<audio controls src="${c.voiceNote}"></audio>`;
-        if (c.photo) html += `<img src="${c.photo}" class="capsule-img" />`;
-        if (c.video) html += `<video controls src="${c.video}"></video>`;
-        html += `<p>${c.message}</p>`;
+    if (type === "future") {
+      html += `<p class="countdown">⏳ ${getCountdownString(c.unlockTime)}</p>`;
+    } else {
+      // ✅ Neatly grouped media block
+      if (c.voiceNote || c.photo || c.video) {
+        html += `<div class="media-block">`;
+
+        if (c.voiceNote) {
+          html += `<audio controls src="${c.voiceNote}"></audio>`;
+        }
+        if (c.photo) {
+          html += `<img src="${c.photo}" class="capsule-img" />`;
+        }
+        if (c.video) {
+          html += `<video controls src="${c.video}"></video>`;
+        }
+
+        html += `</div>`;
       }
 
-      div.innerHTML = html;
-      container.appendChild(div);
-    });
+      html += `<p>${c.message}</p>`;
+    }
 
-    if (type === "future") startCountdowns();
-  }
+    div.innerHTML = html;
+    container.appendChild(div);
+  });
+
+  if (type === "future") startCountdowns();
+}
 
   function getCountdownString(unlockTime) {
     const now = new Date();
