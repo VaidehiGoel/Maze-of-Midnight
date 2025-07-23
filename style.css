@@ -3,10 +3,8 @@ body {
   margin: 0;
   padding: 0;
   background: #F2D0A8;
-background: linear-gradient(324deg, rgba(242, 208, 168, 1) 28%, rgba(212, 165, 165, 1) 72%);
-
+  background: linear-gradient(324deg, rgba(242, 208, 168, 1) 28%, rgba(212, 165, 165, 1) 72%);
 }
-
 
 .navbar {
   background-color: #2b2d42;
@@ -20,7 +18,6 @@ background: linear-gradient(324deg, rgba(242, 208, 168, 1) 28%, rgba(212, 165, 1
 .navbar h1 {
   margin: 0;
 }
-
 .navbar ul {
   list-style: none;
   display: flex;
@@ -45,7 +42,6 @@ h2 {
   text-align: center;
 }
 
-
 form {
   display: flex;
   flex-direction: column;
@@ -59,6 +55,12 @@ input, textarea {
   border: 1px solid #ccc;
   border-radius: 5px;
   resize: vertical;
+}
+#photo{
+  background-color:white;
+}
+#video{
+  background-color:white;
 }
 
 button[type="submit"] {
