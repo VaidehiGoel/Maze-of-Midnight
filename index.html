@@ -10,10 +10,10 @@
   <nav class="navbar">
     <h1>⏳ Time Capsule</h1>
     <ul>
-      <li><button onclick="navigate('homeSection')">🏠 Home</button></li>
-      <li><button onclick="navigate('unopenedSection')">🔓 Unopened</button></li>
-      <li><button onclick="showSection('opened')">📖 Opened</button></li>
-      <li><button onclick="showSection('future')">🕒 Future</button></li>
+      <li><button id="btn-home">🏠 Home</button></li>
+      <li><button id="btn-unopened">🔓 Unopened</button></li>
+      <li><button id="btn-opened">📖 Opened</button></li>
+      <li><button id="btn-future">🕒 Future</button></li>
     </ul>
   </nav>
 
@@ -24,14 +24,18 @@
         <input type="text" id="title" placeholder="Capsule Title" required />
         <textarea id="message" placeholder="Your message..." required></textarea>
         <input type="datetime-local" id="unlockTime" required />
+
         <label>Attach Photo:</label>
         <input type="file" id="photo" accept="image/*" />
+
         <label>Attach Video:</label>
         <input type="file" id="video" accept="video/*" />
+
         <label>Record Voice Note:</label>
         <button type="button" id="startRecording">🎙 Start</button>
         <button type="button" id="stopRecording" disabled>⏹ Stop</button>
         <audio id="recordedAudio" controls style="display: none;"></audio>
+
         <button type="submit">Create Capsule</button>
       </form>
     </section>

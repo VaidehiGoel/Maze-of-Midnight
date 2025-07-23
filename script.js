@@ -1,4 +1,5 @@
 window.onload = () => {
+  // Voice recording setup
   let mediaRecorder;
   let audioChunks = [];
   let recordedAudioBase64 = null;
@@ -11,9 +12,8 @@ window.onload = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         recordedAudioBase64 = reader.result;
-        const audio = document.getElementById("recordedAudio");
-        audio.src = recordedAudioBase64;
-        audio.style.display = "block";
+        document.getElementById("recordedAudio").src = recordedAudioBase64;
+        document.getElementById("recordedAudio").style.display = "block";
       };
       reader.readAsDataURL(blob);
       audioChunks = [];
@@ -32,6 +32,27 @@ window.onload = () => {
     document.getElementById("stopRecording").disabled = true;
   };
 
+  // Navbar buttons
+  document.getElementById("btn-home").onclick = () => showOnly("homeSection");
+  document.getElementById("btn-unopened").onclick = () => showOnly("unopenedSection");
+  document.getElementById("btn-opened").onclick = () => showOther("opened");
+  document.getElementById("btn-future").onclick = () => showOther("future");
+
+  function showOnly(id) {
+    const sections = ["homeSection", "unopenedSection", "capsuleList-other"];
+    sections.forEach(s => {
+      document.getElementById(s).style.display = (s === id) ? "block" : "none";
+    });
+    if (id === "unopenedSection") renderUnopened();
+  }
+
+  function showOther(type) {
+    document.getElementById("homeSection").style.display = "none";
+    document.getElementById("unopenedSection").style.display = "none";
+    document.getElementById("capsuleList-other").style.display = "block";
+    renderOther(type);
+  }
+
   document.getElementById("capsuleForm").onsubmit = function(e) {
     e.preventDefault();
     const title = document.getElementById("title").value.trim();
@@ -40,12 +61,11 @@ window.onload = () => {
     const photoFile = document.getElementById("photo").files[0];
     const videoFile = document.getElementById("video").files[0];
 
-    const readerTasks = [];
-    let photoBase64 = null;
-    let videoBase64 = null;
+    const readers = [];
+    let photoBase64 = null, videoBase64 = null;
 
     if (photoFile) {
-      readerTasks.push(new Promise(resolve => {
+      readers.push(new Promise(resolve => {
         const reader = new FileReader();
         reader.onloadend = () => {
           photoBase64 = reader.result;
@@ -56,7 +76,7 @@ window.onload = () => {
     }
 
     if (videoFile) {
-      readerTasks.push(new Promise(resolve => {
+      readers.push(new Promise(resolve => {
         const reader = new FileReader();
         reader.onloadend = () => {
           videoBase64 = reader.result;
@@ -66,7 +86,7 @@ window.onload = () => {
       }));
     }
 
-    Promise.all(readerTasks).then(() => {
+    Promise.all(readers).then(() => {
       const capsule = {
         id: Date.now().toString(),
         title,
@@ -82,18 +102,14 @@ window.onload = () => {
       capsules.push(capsule);
       localStorage.setItem("capsules", JSON.stringify(capsules));
       this.reset();
-      recordedAudioBase64 = null;
       document.getElementById("recordedAudio").style.display = "none";
-      renderAll();
+      recordedAudioBase64 = null;
+      showOnly("unopenedSection");
     });
   };
 
   function getCapsules() {
     return JSON.parse(localStorage.getItem("capsules")) || [];
-  }
-
-  function renderAll() {
-    renderUnopened();
   }
 
   function renderUnopened() {
@@ -105,12 +121,13 @@ window.onload = () => {
     capsules.forEach(c => {
       const div = document.createElement("div");
       div.className = "capsuleCard";
+
       div.innerHTML = `
         <h3>${c.title}</h3>
         <p><strong>Unlocked:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
-        ${c.voiceNote && c.revealed ? `<audio controls src="${c.voiceNote}"></audio>` : ''}
-        ${c.photo && c.revealed ? `<img src="${c.photo}" class="capsule-img" />` : ''}
-                ${c.video && c.revealed ? `<video controls src="${c.video}"></video>` : ''}
+        ${c.revealed && c.voiceNote ? `<audio controls src="${c.voiceNote}"></audio>` : ''}
+        ${c.revealed && c.photo ? `<img src="${c.photo}" class="capsule-img" />` : ''}
+        ${c.revealed && c.video ? `<video controls src="${c.video}"></video>` : ''}
         <div class="${c.revealed ? '' : 'message-hidden'}">
           <p>${c.message}</p>
           <button onclick="markAsRead('${c.id}')">Mark as Read</button>
@@ -123,50 +140,45 @@ window.onload = () => {
     });
   }
 
-  function revealMessage(id) {
+  window.revealMessage = function(id) {
     const capsules = getCapsules();
     const index = capsules.findIndex(c => c.id === id);
     if (index !== -1) {
       capsules[index].revealed = true;
       localStorage.setItem("capsules", JSON.stringify(capsules));
-      renderAll();
+      renderUnopened();
     }
-  }
+  };
 
-  function markAsRead(id) {
+  window.markAsRead = function(id) {
     const capsules = getCapsules();
     const index = capsules.findIndex(c => c.id === id);
     if (index !== -1) {
       capsules[index].opened = true;
       capsules[index].revealed = false;
       localStorage.setItem("capsules", JSON.stringify(capsules));
-      renderAll();
+      renderUnopened();
     }
-  }
+  };
 
   function renderOther(type) {
-    const container = document.getElementById("capsuleList-other");
-    const content = document.getElementById("capsuleList-content");
-    const title = document.getElementById("otherSectionTitle");
+    const container = document.getElementById("capsuleList-content");
+    container.innerHTML = "";
+    document.getElementById("otherSectionTitle").textContent = type === "opened"
+      ? "📖 Opened Capsules"
+      : "🕒 Future Capsules";
 
-    container.style.display = "block";
-    document.getElementById("homeSection").style.display = "none";
-    document.getElementById("unopenedSection").style.display = "none";
-
+    const now = new Date();
     let capsules = getCapsules();
-    content.innerHTML = "";
 
-    if (type === "opened") {
-      title.textContent = "📖 Opened Capsules";
-      capsules = capsules.filter(c => c.opened);
-    } else if (type === "future") {
-      title.textContent = "🕒 Future Capsules";
-      capsules = capsules.filter(c => !c.opened && new Date(c.unlockTime) > new Date());
-    }
+        capsules = (type === "opened")
+      ? capsules.filter(c => c.opened)
+      : capsules.filter(c => !c.opened && new Date(c.unlockTime) > now);
 
     capsules.forEach(c => {
       const div = document.createElement("div");
       div.className = "capsuleCard";
+
       let html = `
         <h3>${c.title}</h3>
         <p><strong>Unlocks:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
@@ -175,14 +187,14 @@ window.onload = () => {
       if (type === "future") {
         html += `<p class="countdown">⏳ ${getCountdownString(c.unlockTime)}</p>`;
       } else {
-        if (c.voiceNote) html += `<audio controls src="${c.voiceNote}" style="margin-top:10px;"></audio>`;
-        if (c.photo) html += `<img src="${c.photo}" alt="Capsule Photo" class="capsule-img" />`;
-        if (c.video) html += `<video controls src="${c.video}" style="margin-top:10px;"></video>`;
+        if (c.voiceNote) html += `<audio controls src="${c.voiceNote}"></audio>`;
+        if (c.photo) html += `<img src="${c.photo}" class="capsule-img" />`;
+        if (c.video) html += `<video controls src="${c.video}"></video>`;
         html += `<p>${c.message}</p>`;
       }
 
       div.innerHTML = html;
-      content.appendChild(div);
+      container.appendChild(div);
     });
 
     if (type === "future") startCountdowns();
@@ -217,27 +229,6 @@ window.onload = () => {
     setInterval(updateCountdowns, 1000);
   }
 
-  function navigate(sectionId) {
-    const sections = ["homeSection", "unopenedSection", "capsuleList-other"];
-    sections.forEach(id => {
-      document.getElementById(id).style.display = (id === sectionId || id === "unopenedSection") ? "block" : "none";
-    });
-
-    setTimeout(() => {
-      const target = document.getElementById(sectionId);
-      if (target) target.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-
-    renderAll();
-  }
-
-  function showSection(section) {
-    document.getElementById("capsuleList-other").style.display = "block";
-    document.getElementById("homeSection").style.display = "none";
-    document.getElementById("unopenedSection").style.display = "none";
-    renderOther(section);
-  }
-
-  // Initial render
-  renderAll();
+  // Initial load
+  showOnly("homeSection");
 };
