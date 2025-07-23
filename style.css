@@ -67,26 +67,20 @@ button[type="submit"] {
   box-shadow: 0 0 5px rgba(0,0,0,0.1);
 }
 
-.capsuleMessage {
-  margin-top: 0.5rem;
-  background: #edf2f4;
-  padding: 0.5rem;
-  border-radius: 4px;
-  font-style: italic;
+.capsule-img {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  margin-top: 10px;
+  border-radius: 8px;
 }
 
-.hidden {
-  display: none;
+video {
+  max-width: 100%;
+  margin-top: 10px;
+  border-radius: 8px;
 }
 
-.countdownText {
-  font-weight: bold;
-  color: #d90429;
-}
-/* Add to the bottom of your current CSS */
-.message-hidden {
-  display: none;
-}
 .message-hidden {
   display: none;
 }
@@ -95,12 +89,4 @@ button[type="submit"] {
   font-weight: bold;
   color: #f06292;
   margin-top: 5px;
-}
-
-.capsule-img {
-  max-width: 100%;
-  max-height: 300px;
-  object-fit: cover;
-  margin-top: 10px;
-  border-radius: 8px;
 }
