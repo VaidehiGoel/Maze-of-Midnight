@@ -2,9 +2,11 @@ body {
   font-family: 'Segoe UI', sans-serif;
   margin: 0;
   padding: 0;
-  background: #f4f7f8;
+  background: #F2D0A8;
+background: linear-gradient(324deg, rgba(242, 208, 168, 1) 28%, rgba(212, 165, 165, 1) 72%);
 
 }
+
 
 .navbar {
   background-color: #2b2d42;
@@ -108,8 +110,9 @@ video {
 .media-block audio,
 .media-block video {
   width: 100%;
-  outline: none;
+  outline: black;
   border-radius: 6px;
+
 }
 
 .media-block img {
@@ -153,17 +156,17 @@ button:disabled {
 }
 
 #startRecording {
-  background-color: #28a745;
+  background-color: #43a047;
 }
 
 #startRecording:hover {
-  background-color: #218838;
+  background-color: #43a047;
 }
 
 #stopRecording {
-  background-color: #dc3545;
+  background-color: #f44336;
 }
 
 #stopRecording:hover {
-  background-color: #c82333;
+  background-color: #f44336;
 }
