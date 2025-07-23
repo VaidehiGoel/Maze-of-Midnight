@@ -67,26 +67,20 @@ button[type="submit"] {
   box-shadow: 0 0 5px rgba(0,0,0,0.1);
 }
 
-.capsuleMessage {
-  margin-top: 0.5rem;
-  background: #edf2f4;
-  padding: 0.5rem;
-  border-radius: 4px;
-  font-style: italic;
+.capsule-img {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  margin-top: 10px;
+  border-radius: 8px;
 }
 
-.hidden {
-  display: none;
+video {
+  max-width: 100%;
+  margin-top: 10px;
+  border-radius: 8px;
 }
 
-.countdownText {
-  font-weight: bold;
-  color: #d90429;
-}
-/* Add to the bottom of your current CSS */
-.message-hidden {
-  display: none;
-}
 .message-hidden {
   display: none;
 }
@@ -97,10 +91,73 @@ button[type="submit"] {
   margin-top: 5px;
 }
 
-.capsule-img {
+.media-block {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f9fbfc;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.media-block audio,
+.media-block video {
+  width: 100%;
+  outline: none;
+  border-radius: 6px;
+}
+
+.media-block img {
   max-width: 100%;
   max-height: 300px;
   object-fit: cover;
-  margin-top: 10px;
+  border-radius: 6px;
+}
+button {
+  padding: 10px 18px;
+  background-color: #2491f7;
+  color: black;
+  border: none;
   border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  margin: 5px 0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+button:hover {
+  background-color: #187cd3;
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.capsuleCard button {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+#startRecording,
+#stopRecording {
+  margin-right: 10px;
+  margin-top: 10px;
+}
+
+#startRecording {
+  background-color: #28a745;
+}
+
+#startRecording:hover {
+  background-color: #218838;
+}
+
+#stopRecording {
+  background-color: #dc3545;
+}
+
+#stopRecording:hover {
+  background-color: #c82333;
 }

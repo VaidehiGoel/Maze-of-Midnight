@@ -5,61 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Time Capsule</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    .capsule-img {
-      max-width: 100%;
-      max-height: 300px;
-      object-fit: cover;
-      margin-top: 10px;
-      border-radius: 8px;
-    }
-    .capsuleCard {
-      border: 1px solid #ddd;
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      background-color: #fefefe;
-    }
-    .openBtn {
-      margin-top: 10px;
-    }
-    .message-hidden {
-      display: none;
-    }
-  </style>
 </head>
 <body>
   <nav class="navbar">
     <h1>⏳ Time Capsule</h1>
     <ul>
-      <li><button onclick="navigate('homeSection')">🏠 Home</button></li>
-      <li><button onclick="navigate('unopenedSection')">🔓 Unopened</button></li>
-      <li><button onclick="showSection('opened')">📖 Opened</button></li>
-      <li><button onclick="showSection('future')">🕒 Future</button></li>
+      <li><button id="btn-home">🏠 Home</button></li>
+      <li><button id="btn-unopened">🔓 Unopened</button></li>
+      <li><button id="btn-opened">📖 Opened</button></li>
+      <li><button id="btn-future">🕒 Future</button></li>
     </ul>
   </nav>
 
   <main>
-    <section class="formSection" id="homeSection">
+    <section id="homeSection">
       <h2>Create New Capsule</h2>
       <form id="capsuleForm">
         <input type="text" id="title" placeholder="Capsule Title" required />
         <textarea id="message" placeholder="Your message..." required></textarea>
         <input type="datetime-local" id="unlockTime" required />
-        <label for="photo">Attach Photo:</label>
+
+        <label>Attach Photo:</label>
         <input type="file" id="photo" accept="image/*" />
-        <label for="voiceNote">Attach Voice Note:</label>
-        <input type="file" id="voiceNote" accept="audio/*" />
+
+        <label>Attach Video:</label>
+        <input type="file" id="video" accept="video/*" />
+
+        <label>Record Voice Note:</label>
+        <button type="button" id="startRecording">🎙 Start</button>
+        <button type="button" id="stopRecording" disabled>⏹ Stop</button>
+        <audio id="recordedAudio" controls style="display: none;"></audio>
+
         <button type="submit">Create Capsule</button>
       </form>
     </section>
 
-    <section id="unopenedSection" class="capsuleContainer">
+    <section id="unopenedSection">
       <h2>🔓 Unopened Capsules</h2>
       <div id="capsuleList-unopened"></div>
     </section>
 
-    <section class="capsuleContainer" id="capsuleList-other" style="display: none;">
+    <section id="capsuleList-other" style="display: none;">
       <h2 id="otherSectionTitle"></h2>
       <div id="capsuleList-content"></div>
     </section>
