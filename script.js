@@ -1,266 +1,287 @@
-window.onload = () => {
-  // Voice recording setup
-  let mediaRecorder;
-  let audioChunks = [];
+document.addEventListener("DOMContentLoaded", () => {
+  let db;
   let recordedAudioBase64 = null;
 
+  const request = indexedDB.open("CapsuleDB", 1);
+  request.onupgradeneeded = (e) => {
+    db = e.target.result;
+    if (!db.objectStoreNames.contains("capsules")) {
+      db.createObjectStore("capsules", { keyPath: "id" });
+    }
+  };
+  request.onsuccess = (e) => {
+    db = e.target.result;
+    renderUnopenedCapsules();
+  };
+  request.onerror = () => alert("❌ Failed to open CapsuleDB");
+
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    const recorder = new MediaRecorder(stream);
+    const chunks = [];
+
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: "audio/webm" });
       const reader = new FileReader();
       reader.onloadend = () => {
         recordedAudioBase64 = reader.result;
-        document.getElementById("recordedAudio").src = recordedAudioBase64;
-        document.getElementById("recordedAudio").style.display = "block";
+        const audio = document.getElementById("recordedAudio");
+        audio.src = recordedAudioBase64;
+        audio.style.display = "block";
       };
       reader.readAsDataURL(blob);
-      audioChunks = [];
+    };
+
+    document.getElementById("startRecording").onclick = () => {
+      recorder.start();
+      document.getElementById("startRecording").disabled = true;
+      document.getElementById("stopRecording").disabled = false;
+    };
+    document.getElementById("stopRecording").onclick = () => {
+      recorder.stop();
+      document.getElementById("startRecording").disabled = false;
+      document.getElementById("stopRecording").disabled = true;
     };
   });
 
-  document.getElementById("startRecording").onclick = () => {
-    mediaRecorder.start();
-    document.getElementById("startRecording").disabled = true;
-    document.getElementById("stopRecording").disabled = false;
-  };
-
-  document.getElementById("stopRecording").onclick = () => {
-    mediaRecorder.stop();
-    document.getElementById("startRecording").disabled = false;
-    document.getElementById("stopRecording").disabled = true;
-  };
-
-  // Navbar buttons
-  document.getElementById("btn-home").onclick = () => showOnly("homeSection");
-  document.getElementById("btn-unopened").onclick = () => showOnly("unopenedSection");
-  document.getElementById("btn-opened").onclick = () => showOther("opened");
-  document.getElementById("btn-future").onclick = () => showOther("future");
-
-  function showOnly(id) {
-    const sections = ["homeSection", "unopenedSection", "capsuleList-other"];
-    sections.forEach(s => {
-      document.getElementById(s).style.display = (s === id) ? "block" : "none";
-    });
-    if (id === "unopenedSection") renderUnopened();
-  }
-
-  function showOther(type) {
-    document.getElementById("homeSection").style.display = "none";
-    document.getElementById("unopenedSection").style.display = "none";
-    document.getElementById("capsuleList-other").style.display = "block";
-    renderOther(type);
-  }
-
-  document.getElementById("capsuleForm").onsubmit = function(e) {
+  document.getElementById("capsuleForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const title = document.getElementById("title").value.trim();
     const message = document.getElementById("message").value.trim();
     const unlockTime = document.getElementById("unlockTime").value;
     const photoFile = document.getElementById("photo").files[0];
     const videoFile = document.getElementById("video").files[0];
 
-    const readers = [];
-    let photoBase64 = null, videoBase64 = null;
-
-    if (photoFile) {
-      readers.push(new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          photoBase64 = reader.result;
-          resolve();
-        };
-        reader.readAsDataURL(photoFile);
-      }));
-    }
-
-    if (videoFile) {
-      readers.push(new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          videoBase64 = reader.result;
-          resolve();
-        };
-        reader.readAsDataURL(videoFile);
-      }));
-    }
-
-    Promise.all(readers).then(() => {
-      const capsule = {
-        id: Date.now().toString(),
-        title,
-        message,
-        unlockTime,
-        opened: false,
-        revealed: false,
-        photo: photoBase64,
-        video: videoBase64,
-        voiceNote: recordedAudioBase64
-      };
-      const capsules = getCapsules();
-      capsules.push(capsule);
-      localStorage.setItem("capsules", JSON.stringify(capsules));
-      this.reset();
-      document.getElementById("recordedAudio").style.display = "none";
-      recordedAudioBase64 = null;
-      showOnly("unopenedSection");
+    const readFile = file => new Promise(resolve => {
+      if (!file) return resolve(null);
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(file);
     });
-  };
 
-  function getCapsules() {
-    return JSON.parse(localStorage.getItem("capsules")) || [];
-  }
+    const photo = await readFile(photoFile);
+    const video = await readFile(videoFile);
 
-  function renderUnopened() {
-  const container = document.getElementById("capsuleList-unopened");
-  container.innerHTML = "";
-  const now = new Date();
-  const capsules = getCapsules().filter(c => !c.opened && new Date(c.unlockTime) <= now);
-
-  capsules.forEach(c => {
-    const div = document.createElement("div");
-    div.className = "capsuleCard";
-
-    let html = `
-      <h3>${c.title}</h3>
-      <p><strong>Unlocked:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
-    `;
-
-    // ✅ Neatly grouped media block
-    if (c.revealed && (c.voiceNote || c.photo || c.video)) {
-      html += `<div class="media-block">`;
-
-      if (c.voiceNote) {
-        html += `<audio controls src="${c.voiceNote}"></audio>`;
-      }
-      if (c.photo) {
-        html += `<img src="${c.photo}" class="capsule-img" />`;
-      }
-      if (c.video) {
-        html += `<video controls src="${c.video}"></video>`;
-      }
-
-      html += `</div>`;
-    }
-
-    html += `
-      <div class="${c.revealed ? '' : 'message-hidden'}">
-        <p>${c.message}</p>
-        <button onclick="markAsRead('${c.id}')">Mark as Read</button>
-      </div>
-      <div class="${c.revealed ? 'message-hidden' : ''}">
-        <button onclick="revealMessage('${c.id}')">Open Capsule</button>
-      </div>
-    `;
-
-    div.innerHTML = html;
-    container.appendChild(div);
-  });
-}
-
-  window.revealMessage = function(id) {
-    const capsules = getCapsules();
-    const index = capsules.findIndex(c => c.id === id);
-    if (index !== -1) {
-      capsules[index].revealed = true;
-      localStorage.setItem("capsules", JSON.stringify(capsules));
-      renderUnopened();
-    }
-  };
-
-  window.markAsRead = function(id) {
-    const capsules = getCapsules();
-    const index = capsules.findIndex(c => c.id === id);
-    if (index !== -1) {
-      capsules[index].opened = true;
-      capsules[index].revealed = false;
-      localStorage.setItem("capsules", JSON.stringify(capsules));
-      renderUnopened();
-    }
-  };
-
-  function renderOther(type) {
-  const container = document.getElementById("capsuleList-content");
-  container.innerHTML = "";
-  document.getElementById("otherSectionTitle").textContent =
-    type === "opened" ? "📖 Opened Capsules" : "🕒 Future Capsules";
-
-  const now = new Date();
-  let capsules = getCapsules();
-
-  capsules = (type === "opened")
-    ? capsules.filter(c => c.opened)
-    : capsules.filter(c => !c.opened && new Date(c.unlockTime) > now);
-
-  capsules.forEach(c => {
-    const div = document.createElement("div");
-    div.className = "capsuleCard";
-
-    let html = `
-      <h3>${c.title}</h3>
-      <p><strong>Unlocks:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
-    `;
-
-    if (type === "future") {
-      html += `<p class="countdown">⏳ ${getCountdownString(c.unlockTime)}</p>`;
-    } else {
-      // ✅ Neatly grouped media block
-      if (c.voiceNote || c.photo || c.video) {
-        html += `<div class="media-block">`;
-
-        if (c.voiceNote) {
-          html += `<audio controls src="${c.voiceNote}"></audio>`;
-        }
-        if (c.photo) {
-          html += `<img src="${c.photo}" class="capsule-img" />`;
-        }
-        if (c.video) {
-          html += `<video controls src="${c.video}"></video>`;
-        }
-
-        html += `</div>`;
-      }
-
-      html += `<p>${c.message}</p>`;
-    }
-
-    div.innerHTML = html;
-    container.appendChild(div);
-  });
-
-  if (type === "future") startCountdowns();
-}
-
-  function getCountdownString(unlockTime) {
-    const now = new Date();
-    const then = new Date(unlockTime);
-    const diff = then - now;
-    if (diff <= 0) return "Available Now!";
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    return `${hours}h ${minutes}m ${seconds}s left`;
-  }
-
-  function startCountdowns() {
-    const updateCountdowns = () => {
-      const capsules = getCapsules().filter(c => !c.opened && new Date(c.unlockTime) > new Date());
-      const content = document.getElementById("capsuleList-content");
-      const countdownEls = content.querySelectorAll(".countdown");
-
-      countdownEls.forEach((el, index) => {
-        const c = capsules[index];
-        if (c) {
-          el.textContent = `⏳ ${getCountdownString(c.unlockTime)}`;
-        }
-      });
+    const capsule = {
+      id: Date.now().toString(),
+      title,
+      message,
+      unlockTime,
+      photo,
+      video,
+      voiceNote: recordedAudioBase64,
+      opened: false,
+      revealed: false
     };
 
-    updateCountdowns();
-    setInterval(updateCountdowns, 1000);
+    const tx = db.transaction("capsules", "readwrite");
+    tx.objectStore("capsules").add(capsule);
+    tx.oncomplete = () => {
+      alert("✅ Capsule created!");
+      document.getElementById("capsuleForm").reset();
+      document.getElementById("recordedAudio").style.display = "none";
+      recordedAudioBase64 = null;
+      setTimeout(() => renderUnopenedCapsules(), 100);
+    };
+    tx.onerror = () => console.error("❌ Failed to store capsule");
+  });
+
+  // 🧭 Navigation
+  document.getElementById("btn-home").onclick = () => showOnly("homeSection");
+  document.getElementById("btn-unopened").onclick = () => {
+    showOnly("unopenedSection");
+    renderUnopenedCapsules();
+  };
+  document.getElementById("btn-opened").onclick = () => {
+    showOnly("capsuleList-other");
+    document.getElementById("otherSectionTitle").textContent = "📖 Opened Capsules";
+    renderOpenedCapsules();
+  };
+  document.getElementById("btn-future").onclick = () => {
+    showOnly("capsuleList-other");
+    document.getElementById("otherSectionTitle").textContent = "🕒 Future Capsules";
+    renderFutureCapsules();
+  };
+
+  function showOnly(id) {
+    ["homeSection", "unopenedSection", "capsuleList-other"].forEach(sectionId => {
+      document.getElementById(sectionId).style.display = (sectionId === id) ? "block" : "none";
+    });
   }
 
-  // Initial load
-  showOnly("homeSection");
-};
+  // 🔓 Unopened Capsules
+  function renderUnopenedCapsules() {
+    const container = document.getElementById("capsuleList-unopened");
+    container.innerHTML = "";
+    const now = new Date();
+
+    const tx = db.transaction("capsules", "readonly");
+    const store = tx.objectStore("capsules");
+    const request = store.openCursor();
+
+    request.onsuccess = function (e) {
+      const cursor = e.target.result;
+      if (cursor) {
+        const c = cursor.value;
+        if (!c.opened && new Date(c.unlockTime) <= now) {
+          const div = createCapsuleCard(c, true);
+          container.appendChild(div);
+        }
+        cursor.continue();
+      }
+    };
+  }
+
+  // 📖 Opened Capsules — no media
+  function renderOpenedCapsules() {
+  const container = document.getElementById("capsuleList-content");
+  container.innerHTML = "";
+
+  const tx = db.transaction("capsules", "readonly");
+  const store = tx.objectStore("capsules");
+  const request = store.openCursor();
+
+  request.onsuccess = function (e) {
+    const cursor = e.target.result;
+    if (cursor) {
+      const c = cursor.value;
+      if (c.opened) {
+        const div = document.createElement("div");
+        div.className = "capsuleCard";
+        div.innerHTML = `
+          <h3>${c.title}</h3>
+          <p><strong>Unlocked:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
+          <p>${c.message}</p>
+          ${c.voiceNote ? `
+            <audio controls>
+              <source src="${c.voiceNote}" type="audio/webm">
+              Your browser does not support the audio tag.
+            </audio>` : ""
+          }
+          ${c.photo ? `<img src="${c.photo}" class="capsule-img" />` : ""}
+          ${c.video ? `<video controls src="${c.video}"></video>` : ""}
+        `;
+        container.appendChild(div);
+      }
+      cursor.continue();
+    }
+  };
+}
+
+  // ⏳ Future Capsules — no button
+  function renderFutureCapsules() {
+    const container = document.getElementById("capsuleList-content");
+    container.innerHTML = "";
+
+    const now = new Date();
+    const tx = db.transaction("capsules", "readonly");
+    const store = tx.objectStore("capsules");
+    const request = store.openCursor();
+
+    request.onsuccess = function (e) {
+      const cursor = e.target.result;
+      if (cursor) {
+        const c = cursor.value;
+        if (!c.opened && new Date(c.unlockTime) > now) {
+          const div = document.createElement("div");
+          div.className = "capsuleCard";
+          div.innerHTML = `
+            <h3>${c.title}</h3>
+            <p><strong>Unlocks:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
+            <p class="countdown" data-unlock="${c.unlockTime}">⏳ ${getCountdown(c.unlockTime)}</p>
+          `;
+          container.appendChild(div);
+        }
+        cursor.continue();
+      }
+    };
+
+    startCountdowns();
+  }
+
+  // ⏱ Countdown Updater
+  function startCountdowns() {
+    setInterval(() => {
+      document.querySelectorAll(".countdown").forEach(el => {
+        const unlockText = el.getAttribute("data-unlock");
+        el.textContent = "⏳ " + getCountdown(unlockText);
+      });
+    }, 1000);
+  }
+
+  function getCountdown(timeStr) {
+    const now = new Date();
+    const then = new Date(timeStr);
+    const diff = then - now;
+    if (diff <= 0) return "Available Now!";
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return `${h}h ${m}m ${s}s remaining`;
+  }
+
+  // 📦 Card builder
+  function createCapsuleCard(c, allowReveal) {
+  const div = document.createElement("div");
+  div.className = "capsuleCard";
+
+  let content = `
+    <h3>${c.title}</h3>
+    <p><strong>Unlocked:</strong> ${new Date(c.unlockTime).toLocaleString()}</p>
+  `;
+
+  if (!c.revealed && allowReveal) {
+    content += `<button onclick="revealCapsule('${c.id}')">Open Capsule</button>`;
+  } else if (c.revealed) {
+    content += `<p>${c.message}</p>`;
+
+    // 🎙️ Show media only in revealed (not opened) capsules
+    if (allowReveal) {
+      if (c.voiceNote) {
+        content += `
+          <audio controls>
+            <source src="${c.voiceNote}" type="audio/webm">
+            Your browser does not support the audio tag.
+          </audio>
+        `;
+      }
+      if (c.photo) {
+        content += `<img src="${c.photo}" class="capsule-img" />`;
+      }
+      if (c.video) {
+        content += `<video controls src="${c.video}"></video>`;
+      }
+      content += `<button onclick="markCapsuleAsRead('${c.id}')">Mark as Read</button>`;
+    }
+  }
+
+  div.innerHTML = content;
+  return div;
+}
+
+  // 🎬 Reveal capsule
+    window.revealCapsule = id => {
+    const tx = db.transaction("capsules", "readwrite");
+    const store = tx.objectStore("capsules");
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const capsule = getReq.result;
+      capsule.revealed = true;
+      store.put(capsule);
+      setTimeout(() => renderUnopenedCapsules(), 100);
+    };
+  };
+    window.markCapsuleAsRead = id => {
+    const tx = db.transaction("capsules", "readwrite");
+    const store = tx.objectStore("capsules");
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const capsule = getReq.result;
+      capsule.opened = true;
+      capsule.revealed = false;
+      store.put(capsule);
+      setTimeout(() => renderUnopenedCapsules(), 100);
+    };
+  };
+});
